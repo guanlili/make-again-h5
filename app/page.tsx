@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const screens = [
-  '启动页',
-  '品牌引导',
+  '启动引导',
   '注册登录',
   '初次叙述',
   'AI 深聊',
@@ -14,6 +13,7 @@ const screens = [
 ] as const;
 
 const moodOptions = ['平静', '想念', '焦虑', '难过', '释然'];
+const animatedSlogan = '我们不帮助你忘记谁，而是陪你慢慢学会，在失去之后继续生活。';
 
 function StatusBar({ light = true }: { light?: boolean }) {
   return (
@@ -60,13 +60,7 @@ export default function Home() {
   const [mood, setMood] = useState('想念');
   const [message, setMessage] = useState('我总会在周六晚上想起他，那原本是我们固定打电话的时间。');
   const [chatStep, setChatStep] = useState(0);
-  const [showNotice, setShowNotice] = useState(false);
-
-  useEffect(() => {
-    if (screen !== 0) return;
-    const timer = window.setTimeout(() => setScreen(1), 2400);
-    return () => window.clearTimeout(timer);
-  }, [screen]);
+  const [callAccepted, setCallAccepted] = useState(false);
 
   const screenTitle = useMemo(() => screens[screen], [screen]);
   const next = () => setScreen((value) => Math.min(value + 1, screens.length - 1));
@@ -79,7 +73,7 @@ export default function Home() {
         <h1>在失去之后，<br />慢慢继续生活。</h1>
         <p>一款帮助人接受离别、整理记忆，并重新找回生活节奏的 AI 陪伴产品。</p>
         <div className="prototype-meta">
-          <span>蓝紫夜色</span><span>低刺激动效</span><span>温柔陪伴</span>
+          <span>暖色渐变</span><span>iOS 原生感</span><span>温柔陪伴</span>
         </div>
         <nav className="screen-nav" aria-label="原型页面导航">
           {screens.map((item, index) => (
@@ -97,41 +91,34 @@ export default function Home() {
           <div className="phone-glint" />
 
           {screen === 0 && (
-            <button className="screen splash-screen" onClick={next} aria-label="进入 Make Again">
+            <section className="screen splash-screen" aria-label="Make Again 启动引导">
               <StatusBar />
               <div className="star-field" aria-hidden="true">
                 {Array.from({ length: 18 }, (_, index) => <i key={index} />)}
               </div>
-              <div className="splash-center">
+              <div className="launch-landscape" aria-hidden="true">
+                <div className="launch-sun" />
+                <div className="launch-hill launch-hill-back" />
+                <div className="launch-hill launch-hill-front" />
+              </div>
+              <div className="splash-center merged-launch">
                 <BrandMark />
                 <div className="wordmark">Make <em>Again</em></div>
-                <p>温柔地，和过去重新相处</p>
+                <p className="animated-slogan" aria-label={animatedSlogan}>
+                  {[...animatedSlogan].map((character, index) => (
+                    <span key={`${character}-${index}`} style={{ animationDelay: `${.7 + index * .075}s` }}>{character}</span>
+                  ))}
+                  <i aria-hidden="true" />
+                </p>
               </div>
-              <div className="splash-bottom">轻触屏幕开始</div>
-            </button>
-          )}
-
-          {screen === 1 && (
-            <section className="screen intro-screen">
-              <StatusBar />
-              <div className="soft-stars" aria-hidden="true" />
-              <div className="intro-art" aria-hidden="true">
-                <div className="moon-disc"><span /></div>
-                <div className="horizon horizon-back" />
-                <div className="horizon horizon-front" />
-                <div className="tiny-person" />
-              </div>
-              <div className="intro-copy">
-                <ProgressDots active={0} />
-                <h2>我们不帮助你忘记谁</h2>
-                <p>而是陪你慢慢学会，<br />在失去之后继续生活。</p>
+              <div className="launch-actions">
                 <button className="primary-button" onClick={next}>开始这段旅程 <span>→</span></button>
-                <button className="text-button" onClick={() => setScreen(6)}>我已经来过</button>
+                <button className="text-button" onClick={() => setScreen(5)}>我已经来过</button>
               </div>
             </section>
           )}
 
-          {screen === 2 && (
+          {screen === 1 && (
             <section className="screen login-screen">
               <StatusBar />
               <BackButton onClick={back} />
@@ -150,7 +137,7 @@ export default function Home() {
             </section>
           )}
 
-          {screen === 3 && (
+          {screen === 2 && (
             <section className="screen writing-screen">
               <StatusBar light={false} />
               <header className="screen-header">
@@ -178,7 +165,7 @@ export default function Home() {
             </section>
           )}
 
-          {screen === 4 && (
+          {screen === 3 && (
             <section className="screen chat-screen">
               <StatusBar />
               <header className="screen-header chat-header">
@@ -215,7 +202,7 @@ export default function Home() {
             </section>
           )}
 
-          {screen === 5 && (
+          {screen === 4 && (
             <section className="screen report-screen">
               <StatusBar light={false} />
               <header className="screen-header">
@@ -249,7 +236,7 @@ export default function Home() {
             </section>
           )}
 
-          {screen === 6 && (
+          {screen === 5 && (
             <section className="screen home-screen">
               <StatusBar />
               <header className="home-header">
@@ -257,16 +244,20 @@ export default function Home() {
                 <div><span>晚上好，林屿</span><strong>今天也不用急着变好</strong></div>
                 <button className="heart-button" aria-label="树洞消息">♡<i>2</i></button>
               </header>
-              <button className="notice-card" onClick={() => setShowNotice(!showNotice)}>
-                <span className="notice-icon">☾</span>
-                <div><small>温柔提醒 · 周六 20:30</small><strong>{showNotice ? '计划已加入今晚提醒' : '今晚，换一种方式度过这个时间'}</strong></div>
-                <span>›</span>
-              </button>
-              <section className="daily-card">
-                <div className="daily-orb" aria-hidden="true"><i /></div>
-                <div className="quote-mark">“</div>
-                <p>你不需要放下过去，<br />只需要把它放到一个<br />不会挡住未来的位置。</p>
-                <div className="quote-source">今日陪伴 · 01</div>
+              <section className="talk-section home-primary">
+                <div className="section-title"><div><small>MAKE AGAIN 在这里</small><h2>今晚，想聊点什么？</h2></div><button>全部 ›</button></div>
+                <div className="talk-cards">
+                  <button className="featured-talk" onClick={() => setScreen(3)}>
+                    <span>周六 20:30 · 温柔提醒</span>
+                    <strong>这个星期，我们换一种方式<br />度过原本属于那通电话的时间。</strong>
+                    <em>和 Make Again 聊聊 <b>→</b></em>
+                  </button>
+                  <button onClick={() => { setCallAccepted(false); setScreen(6); }}>
+                    <span>一次勇气练习</span>
+                    <strong>如果那通电话<br />再次响起</strong>
+                    <em>模拟来电 <b>→</b></em>
+                  </button>
+                </div>
               </section>
               <section className="mood-section">
                 <div className="section-title"><div><small>每日情绪记录</small><h2>你现在感觉怎样？</h2></div><span>连续 4 天</span></div>
@@ -274,30 +265,54 @@ export default function Home() {
                   {moodOptions.map((item) => <button key={item} className={mood === item ? 'active' : ''} onClick={() => setMood(item)}><i />{item}</button>)}
                 </div>
               </section>
-              <section className="talk-section">
-                <div className="section-title"><div><small>今晚可以</small><h2>想聊点什么？</h2></div><button>全部 ›</button></div>
-                <div className="talk-cards">
-                  <button onClick={() => setScreen(4)}><span>01</span><strong>关于那段<br />没有说完的话</strong><em>开始聊聊 →</em></button>
-                  <button onClick={() => setScreen(7)}><span>02</span><strong>试着接起<br />那通电话</strong><em>模拟来电 →</em></button>
-                </div>
+              <section className="daily-card compact-daily">
+                <div className="quote-mark">“</div>
+                <p>愿你的想念，今天轻一点。</p>
+                <div className="quote-source">今日短句 · 01</div>
               </section>
-              <nav className="tab-bar" aria-label="底部导航"><button className="active">⌂<span>今天</span></button><button>◌<span>记录</span></button><button className="main-talk" onClick={() => setScreen(4)}>✦</button><button>□<span>树洞</span></button><button>○<span>我的</span></button></nav>
+              <nav className="tab-bar" aria-label="底部导航"><button className="active">⌂<span>今天</span></button><button>◌<span>记录</span></button><button className="main-talk" onClick={() => setScreen(3)}>✦</button><button>□<span>树洞</span></button><button>○<span>我的</span></button></nav>
             </section>
           )}
 
-          {screen === 7 && (
-            <section className="screen call-screen">
+          {screen === 6 && (
+            <section className={`screen ios-call-screen ${callAccepted ? 'accepted' : 'incoming'}`}>
               <StatusBar />
-              <div className="call-top"><BackButton onClick={back} /><span>模拟来电</span><button>文字模式</button></div>
-              <div className="call-copy"><small>一次只属于你的练习</small><h2>如果那通电话<br />真的再次响起</h2><p>你不需要证明自己已经释怀。<br />只要听听此刻的自己，会说些什么。</p></div>
-              <div className="voice-presence" aria-label="AI 形象正在聆听">
-                <div className="voice-ring ring-one" /><div className="voice-ring ring-two" /><div className="voice-ring ring-three" />
-                <div className="voice-core"><span>MA</span><i /></div>
-                <div className="waveform" aria-hidden="true">{[1,2,3,4,5,6,7,8,9].map((n) => <i key={n} />)}</div>
-              </div>
-              <div className="call-status"><i /> Make Again 正在听</div>
-              <div className="call-actions"><button><span>⌁</span>切换文字</button><button className="mic-button"><span>●</span></button><button onClick={() => setScreen(6)}><span>×</span>结束练习</button></div>
-              <div className="call-hint">想停下时，随时都可以离开</div>
+              {!callAccepted ? (
+                <>
+                  <div className="incoming-caller">
+                    <div className="caller-avatar"><span>MA</span></div>
+                    <h2>Make Again</h2>
+                    <p>手机</p>
+                    <small>模拟来电 · 一次只属于你的练习</small>
+                  </div>
+                  <div className="incoming-secondary-actions">
+                    <button><span>◷</span>提醒我</button>
+                    <button><span>▤</span>信息</button>
+                  </div>
+                  <div className="incoming-main-actions">
+                    <button className="decline-call" onClick={() => setScreen(5)}><span>⌕</span><em>拒绝</em></button>
+                    <button className="accept-call" onClick={() => setCallAccepted(true)}><span>⌕</span><em>接听</em></button>
+                  </div>
+                  <div className="slide-hint">你可以随时选择不接听</div>
+                </>
+              ) : (
+                <>
+                  <div className="active-call-copy">
+                    <h2>Make Again</h2>
+                    <p>00:12</p>
+                  </div>
+                  <div className="active-call-grid">
+                    <button><span>●</span>静音</button>
+                    <button><span>⊞</span>键盘</button>
+                    <button className="selected"><span>◖</span>免提</button>
+                    <button><span>＋</span>添加通话</button>
+                    <button><span>▣</span>FaceTime</button>
+                    <button><span>◎</span>通讯录</button>
+                  </div>
+                  <button className="end-call" onClick={() => { setCallAccepted(false); setScreen(5); }} aria-label="结束通话"><span>⌕</span></button>
+                  <div className="active-call-caption">慢慢说，我在听</div>
+                </>
+              )}
             </section>
           )}
         </div>
