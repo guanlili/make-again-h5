@@ -45,6 +45,13 @@ export default function Home() {
   const [message, setMessage] = useState('我最近总在夜里想起它…');
   const [chatSent, setChatSent] = useState(false);
   const [callAccepted, setCallAccepted] = useState(false);
+  const [moodOpen, setMoodOpen] = useState(false);
+  const [selectedMood, setSelectedMood] = useState('平静');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [eventOpen, setEventOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+  const touchStart = useRef(0);
   const timers = useRef<number[]>([]);
 
   const current = useMemo(() => scenes.find((item) => item.key === scene) ?? scenes[0], [scene]);
@@ -80,17 +87,59 @@ export default function Home() {
 
           {scene === 'envelope' && <section className="phone-screen envelope-scene"><StatusBar /><div className="aurora aurora-one" /><div className="aurora aurora-two" /><div className="envelope-heading"><span>002 · A LETTER FOR YOU</span><h2>在正式开始前，<br />想先给你一封信</h2></div><button className="envelope" onClick={() => setScene('letter')} aria-label="打开 Wakey 写给你的信"><i className="envelope-shadow" /><i className="envelope-letter">Wakey<br />给你的一封信</i><i className="envelope-pocket" /><i className="envelope-flap" /><b>M</b></button><p className="envelope-hint">轻触信封，打开这封信</p></section>}
 
-          {scene === 'letter' && <section className="phone-screen letter-scene"><StatusBar /><div className="letter-scroll"><article className="letter-paper"><div className="paper-ornament"><i /><span>M</span><i /></div><div className="letter-copy"><p className="opening">在正式使用之前，Wakey 想跟你分享两段自己的故事：</p>{founderParagraphs.map((text) => <p key={text}>{text}</p>)}<footer><span>—</span><b>Make Again 主创团队</b><time>2026 年 8 月 28 日</time></footer><button onClick={() => setScene('voice')}>进入 <span>→</span></button></div></article></div></section>}
+          {scene === 'letter' && <section className="phone-screen letter-scene"><StatusBar /><div className="letter-scroll"><article className="letter-paper"><div className="paper-ornament"><i /><span>M</span><i /></div><div className="letter-copy"><p className="opening">在正式使用之前，Wakey 想跟你分享两段自己的故事：</p>{founderParagraphs.map((text) => <p key={text}>{text}</p>)}<footer><span>—</span><b>Make Again 主创团队</b><time>2026 年 8 月 28 日</time></footer><button onClick={() => { setScene('home'); setMoodOpen(true); }}>进入主页 <span>→</span></button></div></article></div></section>}
 
           {scene === 'voice' && <section className="phone-screen voice-scene" data-input-mode={textMode ? 'text' : 'voice'} data-orb-state={orbState}><StatusBar /><header className="voice-heading"><p>Wakey · 陪你慢慢说</p><h2>最近，是什么让你有些放不下</h2><div><i /><span>✦</span><i /></div></header><div className="voice-stage">{orbState === 'speaking' && <div className="voice-answer"><small>Wakey · 回应已抵达</small><p><span>我听见了。</span><span>焦虑不用立刻被解决，你可以先慢慢告诉我，最近是哪一刻最难受。</span></p><em>整段回答已到达</em></div>}</div><div className="voice-composer">{textMode && <input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="输入你想问的…" aria-label="输入你想问的" />}<button className="orb-button" onPointerDown={beginRecording} onPointerUp={sendRecording} onPointerCancel={() => setOrbState('idle')} onClick={() => textMode && setTextMode(false)} aria-label="长按开始录音，松开发送"><VoiceOrb state={orbState} small={textMode} /></button>{!textMode && <button className="text-mode" onClick={() => { clearOrbTimers(); setOrbState('idle'); setTextMode(true); }} aria-label="切换文字输入">×</button>}</div><p className="voice-hint">{textMode ? '文字 · 输入你想问的…' : orbState === 'recording' ? '正在聆听 · 松开发送' : orbState === 'sending' ? '正在送出你的声音…' : orbState === 'thinking' ? 'Wakey 正在认真听懂你…' : orbState === 'speaking' ? 'Wakey 正在回应你' : 'Voice · 长按球体录音，松开发送'}</p><button className="continue-link" onClick={() => setScene('chat')}>继续体验深度陪伴　→</button></section>}
 
-          {scene === 'chat' && <section className="phone-screen chat-scene"><StatusBar /><header className="simple-header"><button onClick={() => setScene('voice')}>‹</button><div><small>Wakey · 正在陪伴</small><h2>把这一刻慢慢说出来</h2></div><button>···</button></header><div className="chat-list"><article className="wakey-message"><small>Wakey</small><p>今天想聊聊什么呢？不需要组织好语言，你想到哪里，就说到哪里。</p></article><article className="user-message"><small>我</small><p>{message}</p></article>{chatSent && <article className="wakey-message follow"><small>Wakey</small><p>我在。先不用急着解决它。此刻，是胸口更紧，还是脑子停不下来？</p></article>}</div><div className="chat-composer"><input value={message} onChange={(event) => setMessage(event.target.value)} aria-label="聊天输入" /><button onClick={() => setChatSent(true)}><VoiceOrb small /></button></div><button className="scene-next" onClick={() => setScene('report')}>生成陪伴报告　→</button></section>}
+          {scene === 'chat' && (
+            <section className="phone-screen chat-scene mirror-chat" onTouchStart={(event) => { touchStart.current = event.touches[0].clientY; }} onTouchEnd={(event) => { if (touchStart.current - event.changedTouches[0].clientY > 48) setHistoryOpen(true); }}>
+              <StatusBar />
+              <header className="simple-header"><button onClick={() => setScene('home')}>‹</button><div><small>Wakey · 魔镜对话</small><h2>把这一刻慢慢说出来</h2></div><button onClick={() => setHistoryOpen(true)}>⌃</button></header>
+              <div className="mirror-stage">
+                <div className="mirror-aura"><VoiceOrb state={chatSent ? 'speaking' : 'idle'} /></div>
+                <article className="mirror-reply"><small>Wakey · 此刻的回应</small><p>{chatSent ? '我在。先不用急着解决它。此刻，是胸口更紧，还是脑子停不下来？' : '今天想聊聊什么呢？不需要组织好语言，你想到哪里，就说到哪里。'}</p></article>
+                <p className="swipe-hint">↑ 上滑查看对话历史</p>
+                {chatSent && <button className="report-preview" onClick={() => setScene('report')}><span>本月陪伴报告已生成</span><strong>我听见的你</strong><p>你不是放不下，只是这份爱还没有地方安放。</p><i>点击展开　→</i></button>}
+              </div>
+              <div className="chat-composer"><input value={message} onChange={(event) => setMessage(event.target.value)} aria-label="聊天输入" /><button onClick={() => setChatSent(true)} aria-label="发送消息"><VoiceOrb small /></button></div>
+              {historyOpen && <div className="history-sheet"><button onClick={() => setHistoryOpen(false)}>×</button><span>对话历史</span><article><small>Wakey</small><p>今天想聊聊什么呢？</p></article><article className="mine"><small>我</small><p>{message}</p></article>{chatSent && <article><small>Wakey</small><p>我在。先不用急着解决它。</p></article>}<i>下滑或点击关闭，回到当前回应</i></div>}
+            </section>
+          )}
 
-          {scene === 'report' && <section className="phone-screen report-scene"><StatusBar /><header className="simple-header"><button onClick={() => setScene('chat')}>‹</button><div><small>MAKE AGAIN</small><h2>你的初次陪伴报告</h2></div><button>↗</button></header><div className="report-scroll"><article className="report-hero"><small>我听见的你</small><h3>你不是放不下，<br />只是这份爱还没有地方安放。</h3><p>毛球陪了你十二年。它不是一段需要被删除的过去，而是你生命里真实发生过的爱。</p><div className="report-orbit"><VoiceOrb small /></div></article><article className="report-plan"><div><span>01</span><p><b>允许悲伤</b><small>把“对不起”和“我舍不得你”说出来</small></p></div><div><span>02</span><p><b>留住回忆</b><small>为照片、项圈和故事留一个纪念空间</small></p></div><div><span>03</span><p><b>慢慢继续</b><small>新的生活不是遗忘，而是带着爱前行</small></p></div></article><blockquote>“爱从不会因告别消失，<br />它只是换一种方式继续陪伴你。”</blockquote><button className="primary-action" onClick={() => setScene('home')}>进入今日陪伴　→</button></div></section>}
+          {scene === 'report' && (
+            <section className="phone-screen report-scene dashboard-scene">
+              <StatusBar />
+              <header className="simple-header"><button onClick={() => setScene('home')}>×</button><div><small>AUGUST · MONTHLY</small><h2>八月陪伴看板</h2></div><button onClick={() => { setSavedToast(true); window.setTimeout(() => setSavedToast(false), 1800); }}>⇩</button></header>
+              <div className="report-scroll dashboard-scroll">
+                <section className="month-overview"><div><small>本月被接住的时刻</small><strong>12</strong><span>次真诚对话</span></div><div className="mood-ring"><i>68%</i><small>平静时刻</small></div></section>
+                <article className="report-hero"><small>我听见的你</small><h3>你不是放不下，<br />只是这份爱还没有地方安放。</h3><p>毛球陪了你十二年。它不是一段需要被删除的过去，而是你生命里真实发生过的爱。</p><div className="report-orbit"><VoiceOrb small /></div></article>
+                <section className="mood-calendar"><header><b>心情日历</b><small>8 月 · 情绪正在变得柔和</small></header><div>{Array.from({ length: 28 }, (_, index) => <i key={index} className={index % 7 === 1 || index % 9 === 0 ? 'warm' : index % 5 === 0 ? 'low' : ''}>{index + 1}</i>)}</div></section>
+                <article className="report-plan"><div><span>01</span><p><b>允许悲伤</b><small>把“对不起”和“我舍不得你”说出来</small></p></div><div><span>02</span><p><b>留住回忆</b><small>为照片、项圈和故事留一个纪念空间</small></p></div><div><span>03</span><p><b>慢慢继续</b><small>新的生活不是遗忘，而是带着爱前行</small></p></div></article>
+                <blockquote>“爱从不会因告别消失，<br />它只是换一种方式继续陪伴你。”</blockquote>
+                <div className="dashboard-actions"><button onClick={() => { setSavedToast(true); window.setTimeout(() => setSavedToast(false), 1800); }}>保存报告</button><button onClick={() => setScene('home')}>保存并退出　→</button></div>
+              </div>
+              {savedToast && <div className="saved-toast">✓　报告已保存到相册</div>}
+            </section>
+          )}
 
-          {scene === 'home' && <section className="phone-screen home-scene"><StatusBar /><header className="home-header"><VoiceOrb small /><div><small>晚上好，林屿</small><h2>今晚也不用急着变好</h2></div><button>♡</button></header><div className="home-scroll"><section className="daily-card"><small>8 月 28 日 · 今日陪伴</small><p>不是所有情绪<br />都要立刻被理解。<br />允许自己慢下来，<br />你依然值得被温柔以待。</p><div className="mini-orb"><VoiceOrb /></div></section><section className="talk-card"><small>想聊点什么？</small><h3>把此刻最真实的感受<br />交给我就好</h3><div><button onClick={() => setScene('chat')}>✦　自己的生活</button><button onClick={() => setScene('chat')}>♡　情感与关系</button></div></section><button className="call-card" onClick={() => { setCallAccepted(false); setScene('call'); }}><span>◖</span><div><small>模拟来电</small><b>想再听一次熟悉的声音吗？</b></div><i>→</i></button></div><div className="home-orb-dock"><button onClick={() => setScene('chat')}><VoiceOrb /></button><small>按住说话</small></div></section>}
+          {scene === 'home' && (
+            <section className="phone-screen home-scene">
+              <StatusBar />
+              <header className="home-header"><button className="function-trigger" onClick={() => setMenuOpen(!menuOpen)}>☰</button><div><small>晚上好，林屿</small><h2>今晚也不用急着变好</h2></div><button>♡</button></header>
+              {menuOpen && <nav className="function-menu"><button onClick={() => { setMenuOpen(false); setScene('home'); }}>⌂<span>今日陪伴</span></button><button onClick={() => { setMenuOpen(false); setScene('chat'); }}>✦<span>和 Wakey 聊聊</span></button><button onClick={() => { setMenuOpen(false); setScene('report'); }}>▥<span>月度看板</span></button><button onClick={() => { setMenuOpen(false); setEventOpen(true); }}>☼<span>触发随机事件</span></button></nav>}
+              <div className="home-scroll">
+                <section className="daily-card"><small>8 月 28 日 · 今日陪伴</small><p>不是所有情绪<br />都要立刻被理解。<br />允许自己慢下来，<br />你依然值得被温柔以待。</p><div className="mini-orb"><VoiceOrb /></div></section>
+                <button className="ai-recommend" onClick={() => setScene('chat')}><span>Wakey 推荐</span><strong>今晚，可以从“最舍不得的一件小事”开始说起</strong><i>→</i></button>
+                <section className="talk-card"><small>想聊点什么？</small><h3>把此刻最真实的感受<br />交给我就好</h3><div><button onClick={() => setScene('chat')}>✦　自己的生活</button><button onClick={() => setScene('chat')}>♡　情感与关系</button></div></section>
+                <button className="call-card" onClick={() => { setCallAccepted(false); setScene('call'); }}><span>◖</span><div><small>模拟来电</small><b>想再听一次熟悉的声音吗？</b></div><i>→</i></button>
+              </div>
+              <div className="home-orb-dock"><button onClick={() => setScene('voice')}><VoiceOrb /></button><small>按住说话</small></div>
+              {moodOpen && <div className="hard-modal mood-modal"><div className="modal-card"><small>FIRST CHECK-IN</small><h2>此刻，你的心情<br />更接近哪一种？</h2><p>不用想太久，选择第一直觉就好。</p><div className="mood-options">{['轻松','平静','低落','焦虑','想念'].map((item) => <button key={item} className={selectedMood === item ? 'active' : ''} onClick={() => setSelectedMood(item)}>{item}</button>)}</div><button className="modal-primary" onClick={() => setMoodOpen(false)}>记录今天的心情　→</button></div></div>}
+            </section>
+          )}
 
           {scene === 'call' && <section className={`phone-screen call-scene ${callAccepted ? 'accepted' : ''}`}><StatusBar />{!callAccepted ? <><div className="caller"><VoiceOrb /><h2>Make Again</h2><p>手机</p></div><div className="call-tools"><button><span>◷</span>提醒我</button><button><span>▤</span>信息</button></div><div className="call-actions"><button className="decline" onClick={() => setScene('home')}><span>⌕</span>拒绝</button><button className="accept" onClick={() => setCallAccepted(true)}><span>⌕</span>接听</button></div></> : <><div className="active-caller"><h2>Make Again</h2><p>00:12</p></div><div className="active-call-grid">{['静音','键盘','免提','添加通话','FaceTime','通讯录'].map((item) => <button key={item}><span>{item === '免提' ? '◖' : '○'}</span>{item}</button>)}</div><button className="end-call" onClick={() => { setCallAccepted(false); setScene('home'); }}><span>⌕</span></button><small className="call-caption">慢慢说，我在听</small></>}</section>}
+          {eventOpen && <div className="hard-modal event-modal"><div className="modal-card"><div className="event-symbol">✦</div><small>一件随机发生的小事</small><h2>今晚的风，<br />好像替你带来了一句话</h2><blockquote>“有些想念不需要答案，<br />被好好记得，本身就是回应。”</blockquote><div className="event-actions"><button onClick={() => setEventOpen(false)}>先收下</button><button onClick={() => { setEventOpen(false); setScene('chat'); }}>和 Wakey 聊聊</button></div></div></div>}
         </div>
       </section>
       <div className="scene-indicator"><span>{current.no}</span><i /><p>{current.title}</p></div>
