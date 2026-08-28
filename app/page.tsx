@@ -46,7 +46,6 @@ export default function Home() {
   const [chatSent, setChatSent] = useState(false);
   const [callAccepted, setCallAccepted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [eventOpen, setEventOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const touchStart = useRef(0);
@@ -123,21 +122,17 @@ export default function Home() {
           {scene === 'home' && (
             <section className="phone-screen home-scene">
               <StatusBar />
-              <header className="home-header"><button className="function-trigger" onClick={() => setMenuOpen(!menuOpen)}>☰</button><div><small>晚上好，林屿</small><h2>今晚也不用急着变好</h2></div><button>♡</button></header>
-              {menuOpen && <nav className="function-menu"><button onClick={() => { setMenuOpen(false); setScene('home'); }}>⌂<span>今日陪伴</span></button><button onClick={() => { setMenuOpen(false); setScene('chat'); }}>✦<span>和 Wakey 聊聊</span></button><button onClick={() => { setMenuOpen(false); setScene('report'); }}>▥<span>月度看板</span></button><button onClick={() => { setMenuOpen(false); setEventOpen(true); }}>☼<span>触发随机事件</span></button></nav>}
+              <header className="home-header"><button className="function-trigger" onClick={() => setMenuOpen(!menuOpen)}>☰</button><div className="home-avatar"><VoiceOrb small /></div><div><small>Hi，林屿。</small><h2>今晚也不用急着变好</h2></div></header>
+              {menuOpen && <nav className="function-menu"><button onClick={() => { setMenuOpen(false); setScene('home'); }}>⌂<span>今日陪伴</span></button><button onClick={() => { setMenuOpen(false); setScene('report'); }}>▥<span>月度看板</span></button><button onClick={() => { setMenuOpen(false); setScene('letter'); }}>✉<span>主创来信</span></button><button onClick={() => setMenuOpen(false)}>⚙<span>账户与设置</span></button></nav>}
               <div className="home-scroll">
-                <section className={`ai-mood-bar ${chatSent ? 'has-insight' : 'waiting'}`}><div className="mood-signal"><i /><i /><i /></div><div><small>AI 心情观察 · {chatSent ? '刚刚更新' : '等待了解'}</small><strong>{chatSent ? '平静里，藏着一点想念' : '和 Wakey 聊几句后，我会更懂你'}</strong><p>{chatSent ? '根据最近的对话，Wakey 感受到你正在尝试与思念共处。' : '情绪判断由 AI 根据对话自动生成，无需手动选择。'}</p></div><span>{chatSent ? '温柔' : '—'}</span></section>
+                <section className="home-mood-calendar"><header><div><small>AI 心情日历</small><strong>8 月 22 日—28 日</strong></div><button>查看整月　›</button></header><div className="calendar-week">{['五 22','六 23','日 24','一 25','二 26','三 27','四 28'].map((item, index) => <i key={item} className={index === 6 ? 'today' : index === 1 || index === 4 ? 'warm' : index === 2 ? 'low' : ''}><span>{item.split(' ')[0]}</span><b>{item.split(' ')[1]}</b><em /></i>)}</div><footer><div className="mood-signal"><i /><i /><i /></div><p><small>Wakey 的观察 · {chatSent ? '刚刚更新' : '等待了解'}</small><strong>{chatSent ? '平静里，藏着一点想念' : '完成一次对话后自动生成心情评价'}</strong></p><span>{chatSent ? '温柔' : '—'}</span></footer></section>
                 <section className="daily-card"><small>8 月 28 日 · 今日陪伴</small><p>不是所有情绪<br />都要立刻被理解。<br />允许自己慢下来，<br />你依然值得被温柔以待。</p><div className="mini-orb"><VoiceOrb /></div></section>
-                <button className="ai-recommend" onClick={() => setScene('chat')}><span>Wakey 推荐</span><strong>今晚，可以从“最舍不得的一件小事”开始说起</strong><i>→</i></button>
-                <section className="talk-card"><small>想聊点什么？</small><h3>把此刻最真实的感受<br />交给我就好</h3><div><button onClick={() => setScene('chat')}>✦　自己的生活</button><button onClick={() => setScene('chat')}>♡　情感与关系</button></div></section>
-                <button className="call-card" onClick={() => { setCallAccepted(false); setScene('call'); }}><span>◖</span><div><small>模拟来电</small><b>想再听一次熟悉的声音吗？</b></div><i>→</i></button>
+                <section className="talk-card"><small>想聊点什么？</small><h3>把此刻最真实的感受<br />交给我就好</h3><div className="talk-topics"><button onClick={() => setScene('chat')}>✦　自己的生活</button><button onClick={() => setScene('chat')}>♡　情感与关系</button></div><button className="talk-voice" onClick={() => setScene('voice')}><VoiceOrb small /><span><b>按住说话</b><small>松开后自动发送</small></span></button></section>
               </div>
-              <div className="home-orb-dock"><button onClick={() => setScene('voice')}><VoiceOrb /></button><small>按住说话</small></div>
             </section>
           )}
 
           {scene === 'call' && <section className={`phone-screen call-scene ${callAccepted ? 'accepted' : ''}`}><StatusBar />{!callAccepted ? <><div className="caller"><VoiceOrb /><h2>Make Again</h2><p>手机</p></div><div className="call-tools"><button><span>◷</span>提醒我</button><button><span>▤</span>信息</button></div><div className="call-actions"><button className="decline" onClick={() => setScene('home')}><span>⌕</span>拒绝</button><button className="accept" onClick={() => setCallAccepted(true)}><span>⌕</span>接听</button></div></> : <><div className="active-caller"><h2>Make Again</h2><p>00:12</p></div><div className="active-call-grid">{['静音','键盘','免提','添加通话','FaceTime','通讯录'].map((item) => <button key={item}><span>{item === '免提' ? '◖' : '○'}</span>{item}</button>)}</div><button className="end-call" onClick={() => { setCallAccepted(false); setScene('home'); }}><span>⌕</span></button><small className="call-caption">慢慢说，我在听</small></>}</section>}
-          {eventOpen && <div className="hard-modal event-modal"><div className="modal-card"><div className="event-symbol">✦</div><small>一件随机发生的小事</small><h2>今晚的风，<br />好像替你带来了一句话</h2><blockquote>“有些想念不需要答案，<br />被好好记得，本身就是回应。”</blockquote><div className="event-actions"><button onClick={() => setEventOpen(false)}>先收下</button><button onClick={() => { setEventOpen(false); setScene('chat'); }}>和 Wakey 聊聊</button></div></div></div>}
         </div>
       </section>
       <div className="scene-indicator"><span>{current.no}</span><i /><p>{current.title}</p></div>
