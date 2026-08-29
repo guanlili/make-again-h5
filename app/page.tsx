@@ -47,7 +47,7 @@ export default function Home() {
   const [callAccepted, setCallAccepted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [savedToast, setSavedToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [boardFlipped, setBoardFlipped] = useState(false);
   const touchStart = useRef(0);
   const timers = useRef<number[]>([]);
@@ -63,6 +63,10 @@ export default function Home() {
     timers.current.push(window.setTimeout(() => setOrbState('thinking'), 900));
     timers.current.push(window.setTimeout(() => setOrbState('speaking'), 2250));
     timers.current.push(window.setTimeout(() => setOrbState('idle'), 6500));
+  };
+  const showToast = (text: string) => {
+    setToastMessage(text);
+    timers.current.push(window.setTimeout(() => setToastMessage(''), 1800));
   };
 
   return (
@@ -107,29 +111,45 @@ export default function Home() {
           {scene === 'report' && (
             <section className="phone-screen report-scene board-scene">
               <StatusBar />
-              <header className="simple-header board-header"><button onClick={() => setScene('home')}>×</button><div><small>MEMORY BOARD</small><h2>你的陪伴看板</h2></div><button onClick={() => { setSavedToast(true); window.setTimeout(() => setSavedToast(false), 1800); }}>⇩</button></header>
+              <header className="simple-header board-header"><button onClick={() => setScene('home')}>×</button><div><small>MEMORY BOARD</small><h2>你的陪伴看板</h2></div><button onClick={() => showToast('陪伴报告已保存')}>⇩</button></header>
               <div className={`board-flipper ${boardFlipped ? 'is-flipped' : ''}`}>
-                <button className="board-face cork-board" onClick={() => setBoardFlipped(true)} aria-label="翻开陪伴看板查看报告">
-                  <span className="wood-grain wood-top" /><span className="wood-grain wood-left" /><span className="wood-grain wood-right" /><span className="wood-grain wood-bottom" />
-                  <div className="board-title"><small>Wakey 为你整理</small><strong>被好好记住的那些事</strong></div>
-                  <article className="pinned-photo"><i className="pin red" /><div className="memory-photo"><span>♥</span><em /></div><p>毛球 · 陪伴你的第十二年</p></article>
-                  <article className="sticky-note"><i className="pin yellow" /><p>“它每天都会<br />在门口等我。”</p><small>一段重要的回忆</small></article>
-                  <article className="memory-ticket"><i className="pin blue" /><small>MEMORY · 08/28</small><strong>床边的小黄鸭</strong><p>你说，那是它最喜欢的玩具。</p></article>
-                  <article className="thread-card"><i className="pin red" /><span>允许悲伤</span><b>01</b></article>
-                  <i className="memory-thread thread-one" /><i className="memory-thread thread-two" />
-                  <div className="board-flip-hint"><span>↻</span><p><b>轻触木板翻开报告</b><small>背面保存着 Wakey 对你的理解</small></p></div>
-                </button>
+                <section className="board-face board-gallery-front">
+                  <div className="board-gallery-scroll">
+                    <button className="hanging-board annual-board" onClick={() => setBoardFlipped(true)} aria-label="翻开年度报告木板">
+                      <span className="board-hook" /><span className="board-rope rope-left" /><span className="board-rope rope-right" />
+                      <span className="board-label"><small>01</small><b>年度报告</b></span>
+                      <span className="gallery-wood-frame" />
+                      <span className="gallery-cork">
+                        <article className="annual-note note-one"><i className="pin red" /><small>2026 · AUG</small><strong>我听见的你</strong><p>平静里，藏着一点想念。</p></article>
+                        <article className="annual-note note-two"><i className="pin blue" /><small>陪伴记录</small><strong>12 次</strong><p>真诚对话被好好收藏</p></article>
+                        <i className="gallery-thread" />
+                        <em className="board-open-hint">轻触翻开年度报告　↻</em>
+                      </span>
+                    </button>
+                    <section className="hanging-board keepsake-board" aria-label="信件与物品木板">
+                      <span className="board-hook" /><span className="board-rope rope-left" /><span className="board-rope rope-right" />
+                      <span className="board-label"><small>02</small><b>信件 &amp; 物品</b></span>
+                      <span className="gallery-wood-frame" />
+                      <span className="gallery-cork keepsake-cork">
+                        <article className="keepsake-envelope"><i className="pin yellow" /><span /><small>写给毛球的一封信</small></article>
+                        <article className="keepsake-photo"><i className="pin red" /><div>♥</div><small>陪伴你的第十二年</small></article>
+                        <article className="keepsake-object"><i className="pin blue" /><span>◒</span><p><b>床边的小黄鸭</b><small>它最喜欢的玩具</small></p></article>
+                      </span>
+                    </section>
+                    <button className="add-memory-button" onClick={() => showToast('已为 TA 留下新的位置')}><span>＋</span><p><b>添加更多有关 TA 的物品</b><small>照片、信件或一件舍不得丢掉的小东西</small></p></button>
+                  </div>
+                </section>
                 <section className="board-face report-back">
                   <div className="report-back-scroll">
                     <button className="flip-back" onClick={() => setBoardFlipped(false)}>↶　翻回看板</button>
                     <article className="report-hero"><small>你的陪伴报告</small><h3>你不是放不下，<br />只是这份爱还没有地方安放。</h3><p>我听到，毛球不只是宠物，它是陪你十二年的家人。它每天在门口摇着尾巴等你，会把头轻轻搁在你腿上，晚上就睡在床边，让你一伸手就能摸到。</p><p>它走得突然，你没能见到最后一面，这件事一直压在心头。你不想忘记它，只想把这些回忆好好收着，慢慢习惯没有它的日子。</p><div className="report-orbit"><VoiceOrb small /></div></article>
                     <article className="report-plan"><header><small>Wakey 为你准备</small><h3>你的疗愈计划</h3></header><div><span>01</span><p><b>允许悲伤，说出内疚</b><small>把“对不起”和“我舍不得你”说出来。</small></p></div><div><span>02</span><p><b>为毛球做一个纪念空间</b><small>把项圈、照片和小黄鸭好好收在一起。</small></p></div><div><span>03</span><p><b>陪伴夜晚的孤独</b><small>让思念有一个安全的地方被安放。</small></p></div></article>
                     <blockquote>“爱从不会因告别消失，<br />它只是换一种方式继续陪伴你。”</blockquote>
-                    <div className="dashboard-actions"><button onClick={() => setBoardFlipped(false)}>返回木板</button><button onClick={() => { setSavedToast(true); window.setTimeout(() => setSavedToast(false), 1800); }}>保存卡片报告　⇩</button></div>
+                    <div className="dashboard-actions"><button onClick={() => setBoardFlipped(false)}>返回木板</button><button onClick={() => showToast('陪伴报告已保存')}>保存卡片报告　⇩</button></div>
                   </div>
                 </section>
               </div>
-              {savedToast && <div className="saved-toast">✓　陪伴报告已保存</div>}
+              {toastMessage && <div className="saved-toast">✓　{toastMessage}</div>}
             </section>
           )}
 
