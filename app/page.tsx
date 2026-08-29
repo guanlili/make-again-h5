@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-type Scene = 'login' | 'envelope' | 'letter' | 'voice' | 'chat' | 'report' | 'home' | 'call';
+type Scene = 'login' | 'envelope' | 'letter' | 'voice' | 'chat' | 'report' | 'home' | 'call' | 'settings' | 'history';
 type OrbState = 'idle' | 'recording' | 'sending' | 'thinking' | 'speaking';
 
 const scenes: { key: Scene; no: string; title: string; caption: string }[] = [
@@ -13,6 +13,28 @@ const scenes: { key: Scene; no: string; title: string; caption: string }[] = [
   { key: 'report', no: '005', title: '陪伴看板', caption: '翻开一块收藏回忆的真实木板' },
   { key: 'home', no: '006', title: '今日陪伴', caption: '每一天都不必急着变好' },
   { key: 'call', no: '007', title: '模拟来电', caption: '在安全的练习里，再听一次声音' },
+  { key: 'settings', no: '008', title: '账户与设置', caption: '管理账号、提醒与隐私' },
+  { key: 'history', no: '009', title: '对话历史', caption: '按时间重新翻阅被听见的片段' },
+];
+
+const historyGroups = [
+  { label: '今天 21:06', messages: [
+    { id: 'today-wakey', from: 'wakey', text: '晚上好，林屿。今天有没有哪个瞬间，让你又想起毛球了？' },
+    { id: 'today-user', from: 'user', text: '回家开门的时候，下意识还在等它跑过来。屋子很安静，我突然特别想它。' },
+  ] },
+  { label: '昨天 23:48', messages: [
+    { id: 'yesterday-wakey', from: 'wakey', text: '我听见了。你想念的不只是它跑向你的样子，也是那种“无论多晚回家，都有人在等你”的安心。\n\n这种习惯突然消失，安静才会显得格外大。你不需要逼自己马上适应。今晚可以先把那一刻留在这里：门打开了，毛球还是像以前一样，摇着尾巴向你跑来。' },
+    { id: 'yesterday-user', from: 'user', text: '谢谢你。我想先把这段话收好，等难受的时候再回来看看。' },
+  ] },
+];
+
+const settingsItems = [
+  { icon: '♙', title: '账号与安全', detail: '微信绑定、登录方式与账号管理' },
+  { icon: '◔', title: '消息通知管理', detail: '陪伴提醒与重要消息' },
+  { icon: '♡', title: '推荐偏好', detail: '调整 Wakey 更懂你的方式' },
+  { icon: '◉', title: '隐私管理', detail: '记忆、对话与数据使用范围' },
+  { icon: '⊘', title: '黑名单与举报', detail: '管理屏蔽内容与安全反馈' },
+  { icon: 'M', title: '关于 Make Again', detail: '产品理念、协议与版本信息' },
 ];
 
 const founderParagraphs = [
@@ -47,8 +69,11 @@ export default function Home() {
   const [callAccepted, setCallAccepted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [savedToast, setSavedToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [boardFlipped, setBoardFlipped] = useState(false);
+  const [historyManage, setHistoryManage] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState<string[]>([]);
+  const [hiddenHistory, setHiddenHistory] = useState<string[]>([]);
   const touchStart = useRef(0);
   const timers = useRef<number[]>([]);
 
@@ -63,6 +88,18 @@ export default function Home() {
     timers.current.push(window.setTimeout(() => setOrbState('thinking'), 900));
     timers.current.push(window.setTimeout(() => setOrbState('speaking'), 2250));
     timers.current.push(window.setTimeout(() => setOrbState('idle'), 6500));
+  };
+  const showToast = (text: string) => {
+    setToastMessage(text);
+    timers.current.push(window.setTimeout(() => setToastMessage(''), 1800));
+  };
+  const toggleHistoryItem = (id: string) => setSelectedHistory((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const toggleHistoryDay = (ids: string[]) => setSelectedHistory((current) => ids.every((id) => current.includes(id)) ? current.filter((id) => !ids.includes(id)) : Array.from(new Set([...current, ...ids])));
+  const deleteSelectedHistory = () => {
+    if (!selectedHistory.length) return;
+    setHiddenHistory((current) => Array.from(new Set([...current, ...selectedHistory])));
+    setSelectedHistory([]);
+    showToast('已删除选中的对话片段');
   };
 
   return (
@@ -107,29 +144,44 @@ export default function Home() {
           {scene === 'report' && (
             <section className="phone-screen report-scene board-scene">
               <StatusBar />
-              <header className="simple-header board-header"><button onClick={() => setScene('home')}>×</button><div><small>MEMORY BOARD</small><h2>你的陪伴看板</h2></div><button onClick={() => { setSavedToast(true); window.setTimeout(() => setSavedToast(false), 1800); }}>⇩</button></header>
+              <header className="simple-header board-header"><button onClick={() => setScene('home')}>×</button><div><small>MEMORY BOARD</small><h2>你的陪伴看板</h2></div><button onClick={() => showToast('陪伴报告已保存')}>⇩</button></header>
               <div className={`board-flipper ${boardFlipped ? 'is-flipped' : ''}`}>
-                <button className="board-face cork-board" onClick={() => setBoardFlipped(true)} aria-label="翻开陪伴看板查看报告">
-                  <span className="wood-grain wood-top" /><span className="wood-grain wood-left" /><span className="wood-grain wood-right" /><span className="wood-grain wood-bottom" />
-                  <div className="board-title"><small>Wakey 为你整理</small><strong>被好好记住的那些事</strong></div>
-                  <article className="pinned-photo"><i className="pin red" /><div className="memory-photo"><span>♥</span><em /></div><p>毛球 · 陪伴你的第十二年</p></article>
-                  <article className="sticky-note"><i className="pin yellow" /><p>“它每天都会<br />在门口等我。”</p><small>一段重要的回忆</small></article>
-                  <article className="memory-ticket"><i className="pin blue" /><small>MEMORY · 08/28</small><strong>床边的小黄鸭</strong><p>你说，那是它最喜欢的玩具。</p></article>
-                  <article className="thread-card"><i className="pin red" /><span>允许悲伤</span><b>01</b></article>
-                  <i className="memory-thread thread-one" /><i className="memory-thread thread-two" />
-                  <div className="board-flip-hint"><span>↻</span><p><b>轻触木板翻开报告</b><small>背面保存着 Wakey 对你的理解</small></p></div>
-                </button>
+                <section className="board-face board-gallery-front">
+                  <div className="board-gallery-scroll">
+                    <button className="hanging-board annual-board" onClick={() => setBoardFlipped(true)} aria-label="翻开年度报告木板">
+                      <span className="board-hook" /><span className="board-rope rope-left" /><span className="board-rope rope-right" />
+                      <span className="board-label"><small>01</small><b>年度报告</b></span>
+                      <span className="gallery-wood-frame" />
+                      <span className="gallery-cork">
+                        <article className="annual-note note-one"><i className="pin red" /><small>2026 · AUG</small><strong>我听见的你</strong><p>平静里，藏着一点想念。</p></article>
+                        <article className="annual-note note-two"><i className="pin blue" /><small>陪伴记录</small><strong>12 次</strong><p>真诚对话被好好收藏</p></article>
+                        <i className="gallery-thread" />
+                        <em className="board-open-hint">轻触翻开年度报告　↻</em>
+                      </span>
+                    </button>
+                    <section className="hanging-board keepsake-board" aria-label="信件与物品木板">
+                      <span className="board-hook" /><span className="board-rope rope-left" /><span className="board-rope rope-right" />
+                      <span className="board-label"><small>02</small><b>信件 &amp; 物品</b></span>
+                      <span className="gallery-wood-frame" />
+                      <span className="gallery-cork keepsake-cork">
+                        <article className="keepsake-envelope"><i className="pin yellow" /><span /><small>写给毛球的一封信</small></article>
+                        <article className="keepsake-photo"><i className="pin red" /><div>♥</div><small>陪伴你的第十二年</small></article>
+                        <article className="keepsake-object"><i className="pin blue" /><span>◒</span><p><b>床边的小黄鸭</b><small>它最喜欢的玩具</small></p></article>
+                      </span>
+                    </section>
+                    <button className="add-memory-button" onClick={() => showToast('已为 TA 留下新的位置')}><span>＋</span><p><b>添加更多有关 TA 的物品</b><small>照片、信件或一件舍不得丢掉的小东西</small></p></button>
+                  </div>
+                </section>
                 <section className="board-face report-back">
                   <div className="report-back-scroll">
                     <button className="flip-back" onClick={() => setBoardFlipped(false)}>↶　翻回看板</button>
                     <article className="report-hero"><small>你的陪伴报告</small><h3>你不是放不下，<br />只是这份爱还没有地方安放。</h3><p>我听到，毛球不只是宠物，它是陪你十二年的家人。它每天在门口摇着尾巴等你，会把头轻轻搁在你腿上，晚上就睡在床边，让你一伸手就能摸到。</p><p>它走得突然，你没能见到最后一面，这件事一直压在心头。你不想忘记它，只想把这些回忆好好收着，慢慢习惯没有它的日子。</p><div className="report-orbit"><VoiceOrb small /></div></article>
                     <article className="report-plan"><header><small>Wakey 为你准备</small><h3>你的疗愈计划</h3></header><div><span>01</span><p><b>允许悲伤，说出内疚</b><small>把“对不起”和“我舍不得你”说出来。</small></p></div><div><span>02</span><p><b>为毛球做一个纪念空间</b><small>把项圈、照片和小黄鸭好好收在一起。</small></p></div><div><span>03</span><p><b>陪伴夜晚的孤独</b><small>让思念有一个安全的地方被安放。</small></p></div></article>
                     <blockquote>“爱从不会因告别消失，<br />它只是换一种方式继续陪伴你。”</blockquote>
-                    <div className="dashboard-actions"><button onClick={() => setBoardFlipped(false)}>返回木板</button><button onClick={() => { setSavedToast(true); window.setTimeout(() => setSavedToast(false), 1800); }}>保存卡片报告　⇩</button></div>
+                    <div className="dashboard-actions"><button onClick={() => setBoardFlipped(false)}>返回木板</button><button onClick={() => showToast('陪伴报告已保存')}>保存卡片报告　⇩</button></div>
                   </div>
                 </section>
               </div>
-              {savedToast && <div className="saved-toast">✓　陪伴报告已保存</div>}
             </section>
           )}
 
@@ -137,7 +189,18 @@ export default function Home() {
             <section className="phone-screen home-scene">
               <StatusBar />
               <header className="home-header"><button className="function-trigger" onClick={() => setMenuOpen(!menuOpen)}>☰</button><div className="home-avatar"><VoiceOrb small /></div><div><small>Hi，林屿。</small><h2>今晚也不用急着变好</h2></div></header>
-              {menuOpen && <nav className="function-menu"><button onClick={() => { setMenuOpen(false); setScene('home'); }}>⌂<span>今日陪伴</span></button><button onClick={() => { setMenuOpen(false); setScene('report'); }}>▥<span>陪伴看板</span></button><button onClick={() => { setMenuOpen(false); setScene('letter'); }}>✉<span>主创来信</span></button><button onClick={() => setMenuOpen(false)}>⚙<span>账户与设置</span></button></nav>}
+              {menuOpen && <><button className="menu-scrim" onClick={() => setMenuOpen(false)} aria-label="关闭菜单" /><aside className="side-drawer" aria-label="功能菜单">
+                <header className="drawer-profile"><div className="drawer-avatar">林</div><p><small>晚上好，</small><strong>林屿</strong></p><button onClick={() => setMenuOpen(false)} aria-label="关闭功能菜单">×</button></header>
+                <section className="trial-card"><span>♙</span><p><b>新用户 7 天免费试用</b><small>解锁完整陪伴与专属记忆空间</small></p><button onClick={() => showToast('会员功能即将开放')}>开通会员</button></section>
+                <nav className="drawer-nav">
+                  <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>＋</i><span><b>私人影像 / 物品上传</b><small>把与 TA 有关的回忆放进看板</small></span><em>＋</em></button>
+                  <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>▥</i><span><b>陪伴看板</b><small>查看报告、信件与收藏物品</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); setScene('history'); }}><i>▤</i><span><b>AI 聊天历史记录</b><small>找回每一次被认真听见的对话</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); setScene('settings'); }}><i>⌂</i><span><b>设置</b><small>账号、提醒与隐私管理</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); showToast('帮助与支持即将开放'); }}><i>?</i><span><b>帮助与支持</b><small>常见问题与意见反馈</small></span><em>›</em></button>
+                </nav>
+                <footer className="drawer-brand"><span>M</span><p><b>Make Again</b><small>相信每一次对话，都能让内心更靠近一点平静。</small></p></footer>
+              </aside></>}
               <div className="home-scroll">
                 <section className="home-mood-calendar"><header><div><small>AI 心情日历</small><strong>8 月 22 日—28 日</strong></div><button>查看整月　›</button></header><div className="calendar-week">{['五 22','六 23','日 24','一 25','二 26','三 27','四 28'].map((item, index) => <i key={item} className={index === 6 ? 'today' : index === 1 || index === 4 ? 'warm' : index === 2 ? 'low' : ''}><span>{item.split(' ')[0]}</span><b>{item.split(' ')[1]}</b><em /></i>)}</div><footer><div className="mood-signal"><i /><i /><i /></div><p><small>Wakey 的观察 · {chatSent ? '刚刚更新' : '等待了解'}</small><strong>{chatSent ? '平静里，藏着一点想念' : '完成一次对话后自动生成心情评价'}</strong></p><span>{chatSent ? '温柔' : '—'}</span></footer></section>
                 <section className="daily-card"><small>8 月 28 日 · 今日陪伴</small><p>不是所有情绪<br />都要立刻被理解。<br />允许自己慢下来，<br />你依然值得被温柔以待。</p><div className="mini-orb"><VoiceOrb /></div></section>
@@ -146,7 +209,35 @@ export default function Home() {
             </section>
           )}
 
+          {scene === 'history' && <section className="phone-screen conversation-history-scene">
+            <StatusBar />
+            <header className="simple-header history-header"><button onClick={() => { setHistoryManage(false); setSelectedHistory([]); setScene('home'); }}>‹</button><div><small>MEMORIES</small><h2>对话历史</h2></div><button onClick={() => { setHistoryManage((value) => !value); setSelectedHistory([]); }}>{historyManage ? '完成' : '管理'}</button></header>
+            <div className={`conversation-history-scroll ${historyManage ? 'is-managing' : ''}`}>
+              {historyGroups.map((group) => { const visible = group.messages.filter((message) => !hiddenHistory.includes(message.id)); if (!visible.length) return null; const ids = visible.map((message) => message.id); return <section className="history-day" key={group.label}>
+                <button className="history-time" onClick={() => historyManage && toggleHistoryDay(ids)}><span>{group.label}</span>{historyManage && <small>{ids.every((id) => selectedHistory.includes(id)) ? '取消本日' : '选择本日'}</small>}</button>
+                {visible.map((message) => <button key={message.id} className={`history-message ${message.from} ${selectedHistory.includes(message.id) ? 'selected' : ''}`} onClick={() => historyManage && toggleHistoryItem(message.id)} aria-pressed={historyManage ? selectedHistory.includes(message.id) : undefined}>
+                  <span className="history-avatar">{message.from === 'wakey' ? 'W' : '林'}</span><article><small>{message.from === 'wakey' ? 'Wakey' : '我'}</small><p>{message.text}</p></article>{historyManage && <i>{selectedHistory.includes(message.id) ? '✓' : ''}</i>}
+                </button>)}
+              </section>; })}
+              {historyGroups.every((group) => group.messages.every((message) => hiddenHistory.includes(message.id))) && <section className="history-empty"><span>⌁</span><h3>这里暂时空了</h3><p>新的对话会继续被温柔保存。</p></section>}
+            </div>
+            {historyManage && <div className="history-manage-bar"><button onClick={() => { setHiddenHistory(historyGroups.flatMap((group) => group.messages.map((message) => message.id))); setSelectedHistory([]); showToast('对话历史已清空'); }}>清空全部</button><button className="delete-selected" disabled={!selectedHistory.length} onClick={deleteSelectedHistory}>删除选中{selectedHistory.length ? `（${selectedHistory.length}）` : ''}</button></div>}
+          </section>}
+
+          {scene === 'settings' && <section className="phone-screen settings-scene">
+            <StatusBar />
+            <header className="simple-header settings-header"><button onClick={() => setScene('home')}>‹</button><div><small>ACCOUNT</small><h2>账户与设置</h2></div><button onClick={() => showToast('更多设置即将开放')}>•••</button></header>
+            <div className="settings-scroll">
+              <section className="settings-identity"><div>林</div><p><strong>林屿</strong><small>微信账号已安全绑定</small></p><span>已登录</span></section>
+              <section className="settings-list">{settingsItems.map((item) => <button key={item.title} onClick={() => showToast(`${item.title}即将开放`)}><i>{item.icon}</i><p><b>{item.title}</b><small>{item.detail}</small></p><span>›</span></button>)}</section>
+              <p className="settings-assurance"><span>✦</span>你的对话与记忆只属于你，未经允许不会被分享。</p>
+              <button className="logout-button" onClick={() => { setMenuOpen(false); setScene('login'); }}>退出登录</button>
+              <small className="settings-version">Make Again · Version 0.1.0</small>
+            </div>
+          </section>}
+
           {scene === 'call' && <section className={`phone-screen call-scene ${callAccepted ? 'accepted' : ''}`}><StatusBar />{!callAccepted ? <><div className="caller"><VoiceOrb /><h2>Make Again</h2><p>手机</p></div><div className="call-tools"><button><span>◷</span>提醒我</button><button><span>▤</span>信息</button></div><div className="call-actions"><button className="decline" onClick={() => setScene('home')}><span>⌕</span>拒绝</button><button className="accept" onClick={() => setCallAccepted(true)}><span>⌕</span>接听</button></div></> : <><div className="active-caller"><h2>Make Again</h2><p>00:12</p></div><div className="active-call-grid">{['静音','键盘','免提','添加通话','FaceTime','通讯录'].map((item) => <button key={item}><span>{item === '免提' ? '◖' : '○'}</span>{item}</button>)}</div><button className="end-call" onClick={() => { setCallAccepted(false); setScene('home'); }}><span>⌕</span></button><small className="call-caption">慢慢说，我在听</small></>}</section>}
+          {toastMessage && <div className="saved-toast">✓　{toastMessage}</div>}
         </div>
       </section>
       <div className="scene-indicator"><span>{current.no}</span><i /><p>{current.title}</p></div>
