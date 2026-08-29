@@ -149,7 +149,6 @@ export default function Home() {
                   </div>
                 </section>
               </div>
-              {toastMessage && <div className="saved-toast">✓　{toastMessage}</div>}
             </section>
           )}
 
@@ -157,7 +156,18 @@ export default function Home() {
             <section className="phone-screen home-scene">
               <StatusBar />
               <header className="home-header"><button className="function-trigger" onClick={() => setMenuOpen(!menuOpen)}>☰</button><div className="home-avatar"><VoiceOrb small /></div><div><small>Hi，林屿。</small><h2>今晚也不用急着变好</h2></div></header>
-              {menuOpen && <nav className="function-menu"><button onClick={() => { setMenuOpen(false); setScene('home'); }}>⌂<span>今日陪伴</span></button><button onClick={() => { setMenuOpen(false); setScene('report'); }}>▥<span>陪伴看板</span></button><button onClick={() => { setMenuOpen(false); setScene('letter'); }}>✉<span>主创来信</span></button><button onClick={() => setMenuOpen(false)}>⚙<span>账户与设置</span></button></nav>}
+              {menuOpen && <><button className="menu-scrim" onClick={() => setMenuOpen(false)} aria-label="关闭菜单" /><aside className="side-drawer" aria-label="功能菜单">
+                <header className="drawer-profile"><div className="drawer-avatar">林</div><p><small>晚上好，</small><strong>林屿</strong></p><button onClick={() => setMenuOpen(false)} aria-label="关闭功能菜单">×</button></header>
+                <section className="trial-card"><span>♙</span><p><b>新用户 7 天免费试用</b><small>解锁完整陪伴与专属记忆空间</small></p><button onClick={() => showToast('会员功能即将开放')}>开通会员</button></section>
+                <nav className="drawer-nav">
+                  <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>＋</i><span><b>私人影像 / 物品上传</b><small>把与 TA 有关的回忆放进看板</small></span><em>＋</em></button>
+                  <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>▥</i><span><b>陪伴看板</b><small>查看报告、信件与收藏物品</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); setScene('chat'); setHistoryOpen(true); }}><i>▤</i><span><b>AI 聊天历史记录</b><small>找回每一次被认真听见的对话</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); showToast('设置页面即将开放'); }}><i>⌂</i><span><b>设置</b><small>账号、提醒与隐私管理</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); showToast('帮助与支持即将开放'); }}><i>?</i><span><b>帮助与支持</b><small>常见问题与意见反馈</small></span><em>›</em></button>
+                </nav>
+                <footer className="drawer-brand"><span>M</span><p><b>Make Again</b><small>相信每一次对话，都能让内心更靠近一点平静。</small></p></footer>
+              </aside></>}
               <div className="home-scroll">
                 <section className="home-mood-calendar"><header><div><small>AI 心情日历</small><strong>8 月 22 日—28 日</strong></div><button>查看整月　›</button></header><div className="calendar-week">{['五 22','六 23','日 24','一 25','二 26','三 27','四 28'].map((item, index) => <i key={item} className={index === 6 ? 'today' : index === 1 || index === 4 ? 'warm' : index === 2 ? 'low' : ''}><span>{item.split(' ')[0]}</span><b>{item.split(' ')[1]}</b><em /></i>)}</div><footer><div className="mood-signal"><i /><i /><i /></div><p><small>Wakey 的观察 · {chatSent ? '刚刚更新' : '等待了解'}</small><strong>{chatSent ? '平静里，藏着一点想念' : '完成一次对话后自动生成心情评价'}</strong></p><span>{chatSent ? '温柔' : '—'}</span></footer></section>
                 <section className="daily-card"><small>8 月 28 日 · 今日陪伴</small><p>不是所有情绪<br />都要立刻被理解。<br />允许自己慢下来，<br />你依然值得被温柔以待。</p><div className="mini-orb"><VoiceOrb /></div></section>
@@ -167,6 +177,7 @@ export default function Home() {
           )}
 
           {scene === 'call' && <section className={`phone-screen call-scene ${callAccepted ? 'accepted' : ''}`}><StatusBar />{!callAccepted ? <><div className="caller"><VoiceOrb /><h2>Make Again</h2><p>手机</p></div><div className="call-tools"><button><span>◷</span>提醒我</button><button><span>▤</span>信息</button></div><div className="call-actions"><button className="decline" onClick={() => setScene('home')}><span>⌕</span>拒绝</button><button className="accept" onClick={() => setCallAccepted(true)}><span>⌕</span>接听</button></div></> : <><div className="active-caller"><h2>Make Again</h2><p>00:12</p></div><div className="active-call-grid">{['静音','键盘','免提','添加通话','FaceTime','通讯录'].map((item) => <button key={item}><span>{item === '免提' ? '◖' : '○'}</span>{item}</button>)}</div><button className="end-call" onClick={() => { setCallAccepted(false); setScene('home'); }}><span>⌕</span></button><small className="call-caption">慢慢说，我在听</small></>}</section>}
+          {toastMessage && <div className="saved-toast">✓　{toastMessage}</div>}
         </div>
       </section>
       <div className="scene-indicator"><span>{current.no}</span><i /><p>{current.title}</p></div>
