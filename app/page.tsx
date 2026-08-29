@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-type Scene = 'login' | 'envelope' | 'letter' | 'voice' | 'chat' | 'report' | 'home' | 'call' | 'settings';
+type Scene = 'login' | 'envelope' | 'letter' | 'voice' | 'chat' | 'report' | 'home' | 'call' | 'settings' | 'history';
 type OrbState = 'idle' | 'recording' | 'sending' | 'thinking' | 'speaking';
 
 const scenes: { key: Scene; no: string; title: string; caption: string }[] = [
@@ -14,6 +14,18 @@ const scenes: { key: Scene; no: string; title: string; caption: string }[] = [
   { key: 'home', no: '006', title: '今日陪伴', caption: '每一天都不必急着变好' },
   { key: 'call', no: '007', title: '模拟来电', caption: '在安全的练习里，再听一次声音' },
   { key: 'settings', no: '008', title: '账户与设置', caption: '管理账号、提醒与隐私' },
+  { key: 'history', no: '009', title: '对话历史', caption: '按时间重新翻阅被听见的片段' },
+];
+
+const historyGroups = [
+  { label: '今天 21:06', messages: [
+    { id: 'today-wakey', from: 'wakey', text: '晚上好，林屿。今天有没有哪个瞬间，让你又想起毛球了？' },
+    { id: 'today-user', from: 'user', text: '回家开门的时候，下意识还在等它跑过来。屋子很安静，我突然特别想它。' },
+  ] },
+  { label: '昨天 23:48', messages: [
+    { id: 'yesterday-wakey', from: 'wakey', text: '我听见了。你想念的不只是它跑向你的样子，也是那种“无论多晚回家，都有人在等你”的安心。\n\n这种习惯突然消失，安静才会显得格外大。你不需要逼自己马上适应。今晚可以先把那一刻留在这里：门打开了，毛球还是像以前一样，摇着尾巴向你跑来。' },
+    { id: 'yesterday-user', from: 'user', text: '谢谢你。我想先把这段话收好，等难受的时候再回来看看。' },
+  ] },
 ];
 
 const settingsItems = [
@@ -59,6 +71,9 @@ export default function Home() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [boardFlipped, setBoardFlipped] = useState(false);
+  const [historyManage, setHistoryManage] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState<string[]>([]);
+  const [hiddenHistory, setHiddenHistory] = useState<string[]>([]);
   const touchStart = useRef(0);
   const timers = useRef<number[]>([]);
 
@@ -77,6 +92,14 @@ export default function Home() {
   const showToast = (text: string) => {
     setToastMessage(text);
     timers.current.push(window.setTimeout(() => setToastMessage(''), 1800));
+  };
+  const toggleHistoryItem = (id: string) => setSelectedHistory((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const toggleHistoryDay = (ids: string[]) => setSelectedHistory((current) => ids.every((id) => current.includes(id)) ? current.filter((id) => !ids.includes(id)) : Array.from(new Set([...current, ...ids])));
+  const deleteSelectedHistory = () => {
+    if (!selectedHistory.length) return;
+    setHiddenHistory((current) => Array.from(new Set([...current, ...selectedHistory])));
+    setSelectedHistory([]);
+    showToast('已删除选中的对话片段');
   };
 
   return (
@@ -172,7 +195,7 @@ export default function Home() {
                 <nav className="drawer-nav">
                   <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>＋</i><span><b>私人影像 / 物品上传</b><small>把与 TA 有关的回忆放进看板</small></span><em>＋</em></button>
                   <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>▥</i><span><b>陪伴看板</b><small>查看报告、信件与收藏物品</small></span><em>›</em></button>
-                  <button onClick={() => { setMenuOpen(false); setScene('chat'); setHistoryOpen(true); }}><i>▤</i><span><b>AI 聊天历史记录</b><small>找回每一次被认真听见的对话</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); setScene('history'); }}><i>▤</i><span><b>AI 聊天历史记录</b><small>找回每一次被认真听见的对话</small></span><em>›</em></button>
                   <button onClick={() => { setMenuOpen(false); setScene('settings'); }}><i>⌂</i><span><b>设置</b><small>账号、提醒与隐私管理</small></span><em>›</em></button>
                   <button onClick={() => { setMenuOpen(false); showToast('帮助与支持即将开放'); }}><i>?</i><span><b>帮助与支持</b><small>常见问题与意见反馈</small></span><em>›</em></button>
                 </nav>
@@ -185,6 +208,21 @@ export default function Home() {
               </div>
             </section>
           )}
+
+          {scene === 'history' && <section className="phone-screen conversation-history-scene">
+            <StatusBar />
+            <header className="simple-header history-header"><button onClick={() => { setHistoryManage(false); setSelectedHistory([]); setScene('home'); }}>‹</button><div><small>MEMORIES</small><h2>对话历史</h2></div><button onClick={() => { setHistoryManage((value) => !value); setSelectedHistory([]); }}>{historyManage ? '完成' : '管理'}</button></header>
+            <div className={`conversation-history-scroll ${historyManage ? 'is-managing' : ''}`}>
+              {historyGroups.map((group) => { const visible = group.messages.filter((message) => !hiddenHistory.includes(message.id)); if (!visible.length) return null; const ids = visible.map((message) => message.id); return <section className="history-day" key={group.label}>
+                <button className="history-time" onClick={() => historyManage && toggleHistoryDay(ids)}><span>{group.label}</span>{historyManage && <small>{ids.every((id) => selectedHistory.includes(id)) ? '取消本日' : '选择本日'}</small>}</button>
+                {visible.map((message) => <button key={message.id} className={`history-message ${message.from} ${selectedHistory.includes(message.id) ? 'selected' : ''}`} onClick={() => historyManage && toggleHistoryItem(message.id)} aria-pressed={historyManage ? selectedHistory.includes(message.id) : undefined}>
+                  <span className="history-avatar">{message.from === 'wakey' ? 'W' : '林'}</span><article><small>{message.from === 'wakey' ? 'Wakey' : '我'}</small><p>{message.text}</p></article>{historyManage && <i>{selectedHistory.includes(message.id) ? '✓' : ''}</i>}
+                </button>)}
+              </section>; })}
+              {historyGroups.every((group) => group.messages.every((message) => hiddenHistory.includes(message.id))) && <section className="history-empty"><span>⌁</span><h3>这里暂时空了</h3><p>新的对话会继续被温柔保存。</p></section>}
+            </div>
+            {historyManage && <div className="history-manage-bar"><button onClick={() => { setHiddenHistory(historyGroups.flatMap((group) => group.messages.map((message) => message.id))); setSelectedHistory([]); showToast('对话历史已清空'); }}>清空全部</button><button className="delete-selected" disabled={!selectedHistory.length} onClick={deleteSelectedHistory}>删除选中{selectedHistory.length ? `（${selectedHistory.length}）` : ''}</button></div>}
+          </section>}
 
           {scene === 'settings' && <section className="phone-screen settings-scene">
             <StatusBar />
