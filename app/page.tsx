@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-type Scene = 'login' | 'envelope' | 'letter' | 'voice' | 'chat' | 'report' | 'home' | 'call';
+type Scene = 'login' | 'envelope' | 'letter' | 'voice' | 'chat' | 'report' | 'home' | 'call' | 'settings';
 type OrbState = 'idle' | 'recording' | 'sending' | 'thinking' | 'speaking';
 
 const scenes: { key: Scene; no: string; title: string; caption: string }[] = [
@@ -13,6 +13,16 @@ const scenes: { key: Scene; no: string; title: string; caption: string }[] = [
   { key: 'report', no: '005', title: '陪伴看板', caption: '翻开一块收藏回忆的真实木板' },
   { key: 'home', no: '006', title: '今日陪伴', caption: '每一天都不必急着变好' },
   { key: 'call', no: '007', title: '模拟来电', caption: '在安全的练习里，再听一次声音' },
+  { key: 'settings', no: '008', title: '账户与设置', caption: '管理账号、提醒与隐私' },
+];
+
+const settingsItems = [
+  { icon: '♙', title: '账号与安全', detail: '微信绑定、登录方式与账号管理' },
+  { icon: '◔', title: '消息通知管理', detail: '陪伴提醒与重要消息' },
+  { icon: '♡', title: '推荐偏好', detail: '调整 Wakey 更懂你的方式' },
+  { icon: '◉', title: '隐私管理', detail: '记忆、对话与数据使用范围' },
+  { icon: '⊘', title: '黑名单与举报', detail: '管理屏蔽内容与安全反馈' },
+  { icon: 'M', title: '关于 Make Again', detail: '产品理念、协议与版本信息' },
 ];
 
 const founderParagraphs = [
@@ -163,7 +173,7 @@ export default function Home() {
                   <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>＋</i><span><b>私人影像 / 物品上传</b><small>把与 TA 有关的回忆放进看板</small></span><em>＋</em></button>
                   <button onClick={() => { setMenuOpen(false); setScene('report'); }}><i>▥</i><span><b>陪伴看板</b><small>查看报告、信件与收藏物品</small></span><em>›</em></button>
                   <button onClick={() => { setMenuOpen(false); setScene('chat'); setHistoryOpen(true); }}><i>▤</i><span><b>AI 聊天历史记录</b><small>找回每一次被认真听见的对话</small></span><em>›</em></button>
-                  <button onClick={() => { setMenuOpen(false); showToast('设置页面即将开放'); }}><i>⌂</i><span><b>设置</b><small>账号、提醒与隐私管理</small></span><em>›</em></button>
+                  <button onClick={() => { setMenuOpen(false); setScene('settings'); }}><i>⌂</i><span><b>设置</b><small>账号、提醒与隐私管理</small></span><em>›</em></button>
                   <button onClick={() => { setMenuOpen(false); showToast('帮助与支持即将开放'); }}><i>?</i><span><b>帮助与支持</b><small>常见问题与意见反馈</small></span><em>›</em></button>
                 </nav>
                 <footer className="drawer-brand"><span>M</span><p><b>Make Again</b><small>相信每一次对话，都能让内心更靠近一点平静。</small></p></footer>
@@ -175,6 +185,18 @@ export default function Home() {
               </div>
             </section>
           )}
+
+          {scene === 'settings' && <section className="phone-screen settings-scene">
+            <StatusBar />
+            <header className="simple-header settings-header"><button onClick={() => setScene('home')}>‹</button><div><small>ACCOUNT</small><h2>账户与设置</h2></div><button onClick={() => showToast('更多设置即将开放')}>•••</button></header>
+            <div className="settings-scroll">
+              <section className="settings-identity"><div>林</div><p><strong>林屿</strong><small>微信账号已安全绑定</small></p><span>已登录</span></section>
+              <section className="settings-list">{settingsItems.map((item) => <button key={item.title} onClick={() => showToast(`${item.title}即将开放`)}><i>{item.icon}</i><p><b>{item.title}</b><small>{item.detail}</small></p><span>›</span></button>)}</section>
+              <p className="settings-assurance"><span>✦</span>你的对话与记忆只属于你，未经允许不会被分享。</p>
+              <button className="logout-button" onClick={() => { setMenuOpen(false); setScene('login'); }}>退出登录</button>
+              <small className="settings-version">Make Again · Version 0.1.0</small>
+            </div>
+          </section>}
 
           {scene === 'call' && <section className={`phone-screen call-scene ${callAccepted ? 'accepted' : ''}`}><StatusBar />{!callAccepted ? <><div className="caller"><VoiceOrb /><h2>Make Again</h2><p>手机</p></div><div className="call-tools"><button><span>◷</span>提醒我</button><button><span>▤</span>信息</button></div><div className="call-actions"><button className="decline" onClick={() => setScene('home')}><span>⌕</span>拒绝</button><button className="accept" onClick={() => setCallAccepted(true)}><span>⌕</span>接听</button></div></> : <><div className="active-caller"><h2>Make Again</h2><p>00:12</p></div><div className="active-call-grid">{['静音','键盘','免提','添加通话','FaceTime','通讯录'].map((item) => <button key={item}><span>{item === '免提' ? '◖' : '○'}</span>{item}</button>)}</div><button className="end-call" onClick={() => { setCallAccepted(false); setScene('home'); }}><span>⌕</span></button><small className="call-caption">慢慢说，我在听</small></>}</section>}
           {toastMessage && <div className="saved-toast">✓　{toastMessage}</div>}
